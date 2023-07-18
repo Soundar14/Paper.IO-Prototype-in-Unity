@@ -1,23 +1,27 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.TextCore.Text;
+
 
 public class Player : MonoBehaviour
 {
-
-    public Color color;
-    public Material material;
-    public string characterName;
-    public List<Player> attackedCharacters = new List<Player>();
+    [SerializeField] bool isPlayer;
+    [SerializeField] Color color;
+    [SerializeField] Material material;
+    [SerializeField] string characterName;
+    [SerializeField] List<Player> attackedCharacters = new List<Player>();
 
     [Header("Area")]
-    public int startAreaPoints = 45;
-    public float startAreaRadius = 3f;
-    public float minPointDistance = 0.1f;    
+    [SerializeField] int initialAreaPoints = 45;
+    [SerializeField] float initialAreaRadius = 3f;
+    [SerializeField] float minPointDistance = 0.1f;
+
+    [HideInInspector]
     public GameObject areaOutline;
-    public List<Vector3> areaVertices = new List<Vector3>();
-    public List<Vector3> newAreaVertices = new List<Vector3>();
+    [HideInInspector]
+    public List<Vector3> CurrentCoveredAreaVertices = new List<Vector3>();
+    [HideInInspector]
+    public List<Vector3> newCoveredAreaVertices = new List<Vector3>();
 
     [HideInInspector]
     public PlayerArea area;
@@ -32,8 +36,13 @@ public class Player : MonoBehaviour
     [Header("Movement")]
     public float speed = 2f;
     public float turnSpeed = 14f;
+
+
+    [HideInInspector]
     public TrailRenderer trail;
+    [HideInInspector]
     public GameObject trailCollidersHolder;
+    [HideInInspector]
     public List<SphereCollider> trailColls = new List<SphereCollider>();
 
     protected Rigidbody rb;
@@ -52,7 +61,7 @@ public class Player : MonoBehaviour
         InitializeCharacter();
     }
 
-    private void Update()
+    public virtual void Update()
     {
 
         transform.position += transform.forward * speed * Time.deltaTime;
@@ -83,10 +92,10 @@ public class Player : MonoBehaviour
         areaOutlineMeshRend.material = material;
         areaOutlineMeshRend.material.color = new Color(color.r * .7f, color.g * .7f, color.b * .7f);
 
-        float step = 360f / startAreaPoints;
-        for (int i = 0; i < startAreaPoints; i++)
+        float step = 360f / initialAreaPoints;
+        for (int i = 0; i < initialAreaPoints; i++)
         {
-            areaVertices.Add(transform.position + Quaternion.Euler(new Vector3(0, step * i, 0)) * Vector3.forward * startAreaRadius);
+            CurrentCoveredAreaVertices.Add(transform.position + Quaternion.Euler(new Vector3(0, step * i, 0)) * Vector3.forward * initialAreaRadius);
         }
         UpdatePlayerArea();
 
@@ -99,7 +108,7 @@ public class Player : MonoBehaviour
     {
         if (areaFilter)
         {
-            Mesh areaMesh = CreateMesh(characterName, areaVertices);
+            Mesh areaMesh = CreateMesh(characterName, CurrentCoveredAreaVertices);
             areaFilter.mesh = areaMesh;
             areaOutlineFilter.mesh = areaMesh;
             area.playerMeshCollider.sharedMesh = areaMesh;
@@ -132,13 +141,13 @@ public class Player : MonoBehaviour
 
         return areaVertices2D.ToArray();
     }
-    public int GetClosestAreaVertice(Vector3 fromPos)
+    public int GetNearbyAreaVerticesPoints(Vector3 fromPos)
     {
         int closest = -1;
         float closestDist = Mathf.Infinity;
-        for (int i = 0; i < areaVertices.Count; i++)
+        for (int i = 0; i < CurrentCoveredAreaVertices.Count; i++)
         {
-            float dist = (areaVertices[i] - fromPos).magnitude;
+            float dist = (CurrentCoveredAreaVertices[i] - fromPos).magnitude;
             if (dist < closestDist)
             {
                 closest = i;
@@ -163,20 +172,20 @@ public class Player : MonoBehaviour
             characterArea.player.Die();
         }
     }
-    private void PlayerLogicPaperMethod()
+    public void PlayerLogicPaperMethod()
     {
         var trans = transform;
         var transPos = trans.position;
         trans.position = Vector3.ClampMagnitude(transPos, 24.5f);
-        bool isOutside = !GameManager.IsPointInPolygon(new Vector2(transPos.x, transPos.z), Vertices2D(areaVertices));
-        int count = newAreaVertices.Count;
+        bool isOutside = !GameManager.IsPointInPolygon(new Vector2(transPos.x, transPos.z), Vertices2D(CurrentCoveredAreaVertices));
+        int count = newCoveredAreaVertices.Count;
 
         if (isOutside)
         {
-            if (count == 0 || !newAreaVertices.Contains(transPos) && (newAreaVertices[count - 1] - transPos).magnitude >= minPointDistance)
+            if (count == 0 || !newCoveredAreaVertices.Contains(transPos) && (newCoveredAreaVertices[count - 1] - transPos).magnitude >= minPointDistance)
             {
                 count++;
-                newAreaVertices.Add(transPos);
+                newCoveredAreaVertices.Add(transPos);
 
                 int trailCollsCount = trailColls.Count;
                 float trailWidth = trail.startWidth;
@@ -205,14 +214,14 @@ public class Player : MonoBehaviour
         }
         else if (count > 0)
         {
-            GameManager.DeformCharacterArea(this, newAreaVertices);
+            GameManager.DeformCharacterArea(this, newCoveredAreaVertices);
 
             foreach (var character in attackedCharacters)
             {
                 List<Vector3> newCharacterAreaVertices = new List<Vector3>();
-                foreach (var vertex in newAreaVertices)
+                foreach (var vertex in newCoveredAreaVertices)
                 {
-                    if (GameManager.IsPointInPolygon(new Vector2(vertex.x, vertex.z), Vertices2D(character.areaVertices)))
+                    if (GameManager.IsPointInPolygon(new Vector2(vertex.x, vertex.z), Vertices2D(character.CurrentCoveredAreaVertices)))
                     {
                         newCharacterAreaVertices.Add(vertex);
                     }
@@ -221,7 +230,7 @@ public class Player : MonoBehaviour
                 GameManager.DeformCharacterArea(character, newCharacterAreaVertices);
             }
             attackedCharacters.Clear();
-            newAreaVertices.Clear();
+            newCoveredAreaVertices.Clear();
 
             if (trail.emitting)
             {
@@ -237,9 +246,19 @@ public class Player : MonoBehaviour
     }
     public void Die()
     {
-           Destroy(area.gameObject);
-           Destroy(areaOutline);
-           Destroy(gameObject);
+        if(isPlayer)
+        {
+            Debug.Log("Dead..");
+            Time.timeScale = 0;
+        }
+        else
+        {
+            Destroy(area.gameObject);
+            Destroy(areaOutline);
+            Destroy(gameObject);
+        }
+
+           
         
     }
 }

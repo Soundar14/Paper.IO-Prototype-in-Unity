@@ -45,9 +45,9 @@ public class GameManager : MonoBehaviour
         int newAreaVerticesCount = newAreaVertices.Count;
         if (newAreaVerticesCount > 0)
         {
-            List<Vector3> areaVertices = player.areaVertices;
-            int startPoint = player.GetClosestAreaVertice(newAreaVertices[0]);
-            int endPoint = player.GetClosestAreaVertice(newAreaVertices[newAreaVerticesCount - 1]);
+            List<Vector3> areaVertices = player.CurrentCoveredAreaVertices;
+            int startPoint = player.GetNearbyAreaVerticesPoints(newAreaVertices[0]);
+            int endPoint = player.GetNearbyAreaVerticesPoints(newAreaVertices[newAreaVerticesCount - 1]);
 
             // CLOCKWISE AREA
             // Select redundant vertices
@@ -108,7 +108,7 @@ public class GameManager : MonoBehaviour
             float counterclockwiseArea = Mathf.Abs(tempAreaCounterclockwise.Take(tempAreaCounterclockwise.Count - 1).Select((p, i) => (tempAreaCounterclockwise[i + 1].x - p.x) * (tempAreaCounterclockwise[i + 1].z + p.z)).Sum() / 2f);
 
             // Find the area with greatest size
-            player.areaVertices = clockwiseArea > counterclockwiseArea ? tempAreaClockwise : tempAreaCounterclockwise;
+            player.CurrentCoveredAreaVertices = clockwiseArea > counterclockwiseArea ? tempAreaClockwise : tempAreaCounterclockwise;
         }
 
         player.UpdatePlayerArea();
