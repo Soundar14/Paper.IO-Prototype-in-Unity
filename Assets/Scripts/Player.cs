@@ -260,7 +260,7 @@ public class Player : MonoBehaviour
         if(isPlayer)
         {
             Debug.Log("Dead..");
-            GameManager.Instance.GameOver();
+            gameManagerRef.GameOver("YOU DEAD!");
         }
         else
         {

@@ -10,6 +10,7 @@ public class AIEnemyBehaviour : Player
     private void OnEnable()
     {
         isNextTurn = true;
+        gameManagerRef = FindAnyObjectByType<GameManager>();
     }    
 
     public override void Update()
@@ -59,11 +60,7 @@ public class AIEnemyBehaviour : Player
     {
         if(gameManagerRef.EnemyCount > 0)
         {
-            gameManagerRef.EnemyCount--;
-            if(gameManagerRef.EnemyCount == 0)
-            {
-                gameManagerRef.GameOver();
-            }
+            gameManagerRef.EnemyCount--;            
         }
     }
 }

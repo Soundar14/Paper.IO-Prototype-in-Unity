@@ -3,23 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Linq;
-using UnityEngine.TextCore.Text;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
     public GameObject GameOverPanel;
 
+    public TextMeshProUGUI msgTM;
     public int EnemyCount;
 
-    private void Awake()
-    {
-        if (!Instance)
-        {
-            Instance = this;
-            DontDestroyOnLoad(this);
-        }
-    }
+    private bool nextItr;
 
     private void Update()
     {
@@ -27,20 +21,27 @@ public class GameManager : MonoBehaviour
         {
             RestartScene();
         }
+
+        if(EnemyCount == 0 && !nextItr)
+        {   
+            GameOver("YOU WON!");
+            nextItr = true;
+        }
     }
 
     public void RestartScene()
     {
-        GameOverPanel.SetActive(false);
         Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        GameOverPanel.SetActive(false);        
+        SceneManager.LoadScene(0);
     }
 
-    public void GameOver()
+    public void GameOver(string msg)
     {
         Time.timeScale = 0;
         Debug.Log("Game Over");
         GameOverPanel.SetActive(true);
+        msgTM.text = msg;
     }
 
     public static void DeformCharacterArea(Player player, List<Vector3> newAreaVertices)
