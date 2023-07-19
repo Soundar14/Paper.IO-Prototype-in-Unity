@@ -6,10 +6,17 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
     [SerializeField] bool isPlayer;
+    [SerializeField] protected int oponentLayerIndex;
     [SerializeField] Color color;
     [SerializeField] Material material;
     [SerializeField] string characterName;
-    [SerializeField] List<Player> attackedCharacters = new List<Player>();
+    [SerializeField] protected GameManager gameManagerRef;
+
+    [HideInInspector]
+    protected List<Player> attackedCharacters = new List<Player>();
+
+    
+    
 
     [Header("Area")]
     [SerializeField] int initialAreaPoints = 45;
@@ -158,19 +165,23 @@ public class Player : MonoBehaviour
         return closest;
     }
 
-    private void OnTriggerEnter(Collider other)
+    public virtual void OnTriggerEnter(Collider other)
     {
         PlayerArea characterArea = other.GetComponent<PlayerArea>();
-        if (characterArea && characterArea != area && !attackedCharacters.Contains(characterArea.player))
-        {
-            attackedCharacters.Add(characterArea.player);
-        }
 
-        if (other.gameObject.layer == 8)
-        {
-            characterArea = other.transform.parent.GetComponent<PlayerArea>();
-            characterArea.player.Die();
-        }
+        
+            if (characterArea && characterArea != area && !attackedCharacters.Contains(characterArea.player))
+            {
+                attackedCharacters.Add(characterArea.player);
+            }
+
+            if (other.gameObject.layer == 8)
+            {
+            Debug.Log("This player thing is problem " +other.name);
+                characterArea = other.transform.parent.GetComponent<PlayerArea>();
+                characterArea.player.Die();
+            }
+                
     }
     public void PlayerLogicPaperMethod()
     {
@@ -249,7 +260,7 @@ public class Player : MonoBehaviour
         if(isPlayer)
         {
             Debug.Log("Dead..");
-            Time.timeScale = 0;
+            GameManager.Instance.GameOver();
         }
         else
         {

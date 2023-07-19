@@ -7,14 +7,16 @@ using UnityEngine.TextCore.Text;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager gm;
-    //public MainMenu mm;
+    public static GameManager Instance;
+    public GameObject GameOverPanel;
+
+    public int EnemyCount;
 
     private void Awake()
     {
-        if (!gm)
+        if (!Instance)
         {
-            gm = this;
+            Instance = this;
             DontDestroyOnLoad(this);
         }
     }
@@ -29,6 +31,7 @@ public class GameManager : MonoBehaviour
 
     public void RestartScene()
     {
+        GameOverPanel.SetActive(false);
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
@@ -37,7 +40,7 @@ public class GameManager : MonoBehaviour
     {
         Time.timeScale = 0;
         Debug.Log("Game Over");
-        //mm.GameOver();
+        GameOverPanel.SetActive(true);
     }
 
     public static void DeformCharacterArea(Player player, List<Vector3> newAreaVertices)
